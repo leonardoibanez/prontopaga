@@ -1,0 +1,54 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
+type Status = 'loading' | 'connected' | 'error';
+
+export function ApiStatus() {
+  const [status, setStatus] = useState<Status>('loading');
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+
+    async function checkConnection() {
+      try {
+        const response = await fetch(`${apiUrl.replace(/\/$/, '')}/health`, {
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+        if (!response.ok) throw new Error('API no disponible');
+        const body: unknown = await response.json();
+        if (!body || typeof body !== 'object' || !('status' in body) || body.status !== 'ok') {
+          throw new Error('Respuesta no válida');
+        }
+        if (active) setStatus('connected');
+      } catch {
+        if (active) setStatus('error');
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    void checkConnection();
+    return () => { active = false; clearTimeout(timeout); controller.abort(); };
+  }, [attempt]);
+
+  return (
+    <section className="connection" aria-label="Conexión al servicio">
+      <div role="status" aria-live="polite" className="connection-copy">
+        <span className={`status-dot ${status}`} aria-hidden="true" />
+        <div>
+          <strong>{status === 'loading' ? 'Comprobando conexión…' : status === 'connected' ? 'Servicio conectado' : 'Servicio no disponible'}</strong>
+          <p>{status === 'error' ? 'No pudimos conectar. Intenta nuevamente en unos momentos.' : 'Estado de conexión con Consulta Riesgo Financiero.'}</p>
+        </div>
+      </div>
+      <button type="button" disabled={status === 'loading'} onClick={() => { setStatus('loading'); setAttempt((value) => value + 1); }}>
+        {status === 'loading' ? 'Comprobando…' : 'Verificar conexión'}
+      </button>
+    </section>
+  );
+}

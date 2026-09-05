@@ -1,0 +1,31 @@
+node_modules/
+# Next.js / NestJS build output
+dist/
+.next/
+out/
+build/
+coverage/
+
+# Framework and tooling caches
+.vercel/
+.turbo/
+.swc/
+.cache/
+
+# Package manager and runtime logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.tsbuildinfo
+
+# Environment files (keep safe, documented examples)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Application logs and OS metadata
+*.log
+.DS_Store
