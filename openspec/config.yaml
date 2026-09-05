@@ -8,28 +8,29 @@ context: |
   Backend: NestJS 11.2.3, Express, TypeScript 5.9.3, CommonJS, strict compiler.
   Frontend: Next.js 16.3.4 App Router and React 19.2.8; explicitly deferred.
   Architecture: backend AppModule imports HealthModule; GET /api/health only.
-  Scope: backend-foundation stage 1 only; no frontend implementation.
-  Testing: root npm test delegates to backend build and node:test HTTP integration test.
+  Scope: backend-rut stage 2 only; pure backend RUT utility and unit tests, with no frontend implementation.
+  Testing: root npm test delegates to backend build and all node:test backend suites.
   Artifacts: English; preserve existing Spanish application strings and documentation.
 
 strict_tdd: true
 testing:
   detected: "2026-09-04"
-  scope: backend-foundation
+  scope: backend-rut
   in_scope_projects: [backend]
   deferred_projects: [frontend]
   test_command: npm test
   command_cwd: workspace-root
   strict_tdd: true
   rationale: >-
-    The explicit root test script covers every currently in-scope project (backend).
+    The explicit root test script covers every currently in-scope project (backend),
+    including existing integration tests and planned RUT unit tests.
     It does not cover frontend. Re-evaluate Strict TDD before widening scope.
   runtime:
     required: ">=24 <25"
     verified_version: 24.20.0
     executable: /tmp/node-v24.20.0-darwin-arm64/bin/node
     invocation: 'PATH="/tmp/node-v24.20.0-darwin-arm64/bin:$PATH" npm test'
-    note: Temporary local runtime path; confirm availability before every runtime launch.
+    note: Standard PATH was checked for stage 2 and still has no Node executable; the temporary runtime remains available. No global environment changes were made.
   execution_evidence: Capability discovery only; tests were not executed during initialization.
   coverage_command: null
   coverage_threshold: null
@@ -41,7 +42,7 @@ testing:
       test_script: npm run build && node --test test/*.test.cjs
       runner: node:test
       test_layers:
-        unit: Available runner; no dedicated unit tests present.
+        unit: Available runner; stage 2 adds a dedicated RUT utility unit-test suite.
         integration: backend/test/health.test.cjs starts a real HTTP server and checks /api/health.
         e2e: No separate E2E harness configured.
       coverage_command: null
@@ -67,13 +68,15 @@ testing:
 
 rules:
   proposal:
-    - Limit implementation to the approved backend-foundation stage 1.
+    - Limit implementation to the approved backend-rut stage 2.
+    - Keep the RUT capability pure: no HTTP endpoints, persistence, authentication, score logic, or external registration lookup.
     - Preserve user changes to .gitignore and docs/.
   specs:
     - Use RFC 2119 requirements and Given/When/Then scenarios.
     - Do not invent financial risk business rules or provider contracts.
   design:
     - Preserve installed versions, NestJS Express adapter, and CommonJS conventions.
+    - Prefer one pure utility with no new dependencies or NestJS wiring.
     - Keep frontend and later backend stages explicitly out of scope.
   tasks:
     - Group reviewable work units with tests and evidence.
