@@ -1,0 +1,96 @@
+schema: spec-driven
+
+sdd:
+  artifact_store: hybrid
+
+context: |
+  Workspace: npm workspaces backend and frontend; Node >=24 <25.
+  Backend: NestJS 11.2.3, Express, TypeScript 5.9.3, CommonJS, strict compiler.
+  Frontend: Next.js 16.3.4 App Router and React 19.2.8; explicitly deferred.
+  Architecture: backend AppModule imports HealthModule; GET /api/health only.
+  Scope: backend-foundation stage 1 only; no frontend implementation.
+  Testing: root npm test delegates to backend build and node:test HTTP integration test.
+  Artifacts: English; preserve existing Spanish application strings and documentation.
+
+strict_tdd: true
+testing:
+  detected: "2026-09-04"
+  scope: backend-foundation
+  in_scope_projects: [backend]
+  deferred_projects: [frontend]
+  test_command: npm test
+  command_cwd: workspace-root
+  strict_tdd: true
+  rationale: >-
+    The explicit root test script covers every currently in-scope project (backend).
+    It does not cover frontend. Re-evaluate Strict TDD before widening scope.
+  runtime:
+    required: ">=24 <25"
+    verified_version: 24.20.0
+    executable: /tmp/node-v24.20.0-darwin-arm64/bin/node
+    invocation: 'PATH="/tmp/node-v24.20.0-darwin-arm64/bin:$PATH" npm test'
+    note: Temporary local runtime path; confirm availability before every runtime launch.
+  execution_evidence: Capability discovery only; tests were not executed during initialization.
+  coverage_command: null
+  coverage_threshold: null
+  projects:
+    - path: backend
+      in_scope: true
+      stack: NestJS 11 / Express / TypeScript / CommonJS
+      test_command: npm run test -w backend
+      test_script: npm run build && node --test test/*.test.cjs
+      runner: node:test
+      test_layers:
+        unit: Available runner; no dedicated unit tests present.
+        integration: backend/test/health.test.cjs starts a real HTTP server and checks /api/health.
+        e2e: No separate E2E harness configured.
+      coverage_command: null
+      lint_command: null
+      typecheck_command: npm run typecheck -w backend
+      build_command: npm run build -w backend
+      formatter_command: null
+    - path: frontend
+      in_scope: false
+      reason: Explicitly deferred by user; no frontend changes authorized.
+      stack: Next.js 16 App Router / React 19 / TypeScript
+      test_command: null
+      runner: null
+      test_layers:
+        unit: No runner configured.
+        integration: No runner configured.
+        e2e: No runner configured.
+      coverage_command: null
+      lint_command: npm run lint -w frontend
+      typecheck_command: npm run typecheck -w frontend
+      build_command: npm run build -w frontend
+      formatter_command: null
+
+rules:
+  proposal:
+    - Limit implementation to the approved backend-foundation stage 1.
+    - Preserve user changes to .gitignore and docs/.
+  specs:
+    - Use RFC 2119 requirements and Given/When/Then scenarios.
+    - Do not invent financial risk business rules or provider contracts.
+  design:
+    - Preserve installed versions, NestJS Express adapter, and CommonJS conventions.
+    - Keep frontend and later backend stages explicitly out of scope.
+  tasks:
+    - Group reviewable work units with tests and evidence.
+    - Include a Review Workload Forecast before apply.
+  apply:
+    guidelines:
+      - Strict RED-GREEN-REFACTOR is mandatory; Standard Mode is forbidden.
+      - No frontend changes, commits, pushes, PRs, or RDD activation without explicit authorization.
+      - Re-confirm Node 24 runtime and use workspace-root npm test.
+    tdd: true
+    test_command: npm test
+  verify:
+    test_command: npm test
+    build_command: npm run build -w backend
+    guidelines:
+      - Report backend evidence only; do not claim frontend test or coverage proof.
+      - No coverage threshold is configured; do not invent one.
+  archive:
+    - Preserve final-state evidence and user-owned files.
+    - Archive only after required verification succeeds.

@@ -1,20 +1,13 @@
 import 'reflect-metadata';
 import 'dotenv/config';
 import { Logger } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { createApplication, parseBootstrapConfig } from './bootstrap';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api');
-  app.enableCors({ origin: process.env.FRONTEND_URL ?? 'http://localhost:3000' });
-  app.enableShutdownHooks();
-  const port = Number(process.env.PORT ?? 3001);
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error('PORT debe ser un número entre 1 y 65535.');
-  }
-  await app.listen(port);
-  Logger.log(`API disponible en http://localhost:${port}/api`, 'Bootstrap');
+  const config = parseBootstrapConfig(process.env);
+  const app = await createApplication(config);
+  await app.listen(config.port);
+  Logger.log(`API disponible en http://localhost:${config.port}/api`, 'Bootstrap');
 }
 
 bootstrap().catch((error: unknown) => {
