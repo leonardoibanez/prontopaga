@@ -6,33 +6,33 @@ sdd:
 context: |
   Workspace: npm workspaces backend and frontend; Node >=24 <25.
   Backend: NestJS 11.2.3, Express, TypeScript 5.9.3, CommonJS, strict compiler.
-  Frontend: Next.js 16.3.4 App Router and React 19.2.8; explicitly deferred.
-  Architecture: backend AppModule imports HealthModule and AuthModule; GET /api/health remains public, while stage 4 adds protected GET /score/:rut at the literal HTTP root using the existing authentication and RUT boundaries.
-  Scope: backend-score stage 4 only; deterministic synthetic score consultation with ownership-aware authorization and no-store responses.
-  Testing: root npm test delegates to backend build and all node:test backend suites; acceptance also runs backend-only build and typecheck.
-  Delivery: the user approved one conventional commit after stage 4; no push, PR, or receipt-driven review was authorized.
-  Artifacts: English; preserve existing Spanish application strings and documentation.
+  Frontend: explicitly deferred; this stage must not modify or integrate it.
+  Architecture: GET /api/health is public; POST /login and protected GET /score/:rut are literal root routes. Authentication uses three synthetic identities and HS256 tokens; score access is owner-or-admin and responses are no-store.
+  Scope: backend-delivery stage 5 only; backend regression evidence, focused error/credential-exposure review, and fresh-developer backend-only documentation.
+  Testing: root npm test delegates to backend build and all 30 node:test tests; acceptance also runs backend-only build and typecheck. Final backend-delivery evidence observed all four exact commands passing with 30 tests.
+  Delivery: exception-ok with no chain; one conventional commit is authorized at close. No push, PR, receipt-driven review, or frontend work is authorized.
+  Artifacts: SDD artifacts are English; extend the repository's Spanish documentation convention.
 
 strict_tdd: true
 testing:
   detected: "2026-09-04"
-  scope: backend-score
+  scope: backend-delivery
   in_scope_projects: [backend]
   deferred_projects: [frontend]
   test_command: npm test
   command_cwd: workspace-root
   strict_tdd: true
   rationale: >-
-    The explicit root test script covers every currently in-scope project (backend),
-    including existing health, authentication, RUT, and planned score tests.
-    It does not cover frontend. Re-evaluate Strict TDD before widening scope.
+    The root test script covers every in-scope backend suite. Documentation-only
+    edits use structural readback; any discovered runtime regression requires a
+    behavioral failing test followed by RED, GREEN, and REFACTOR.
   runtime:
     required: ">=24 <25"
     verified_version: 24.20.0
-    executable: /tmp/node-v24.20.0-darwin-arm64/bin/node
-    invocation: 'PATH="/tmp/node-v24.20.0-darwin-arm64/bin:$PATH" npm test'
-    note: Standard PATH was checked for stage 2 and still has no Node executable; the temporary runtime remains available. No global environment changes were made.
-  execution_evidence: Capability discovery only; tests were not executed during initialization.
+    executable: portable Node 24 runtime (verified 24.20.0)
+    invocation: 'PATH="<node-24-bin>:$PATH" npm test'
+    note: Verification used Node 24.20.0 from a temporary runtime path; the path is environment-specific and is not a required global location. No global environment changes were made.
+  execution_evidence: Backend-delivery final evidence reports 30 passing backend tests and four exact root-scoped commands passed: npm run build -w backend, npm run typecheck -w backend, npm test -w backend, and npm test.
   coverage_command: null
   coverage_threshold: null
   projects:
@@ -43,8 +43,8 @@ testing:
       test_script: npm run build && node --test test/*.test.cjs
       runner: node:test
       test_layers:
-        unit: Available runner; existing RUT utility tests and planned deterministic score tests remain in scope.
-        integration: node:test suites use the shared effective bootstrap for health, authentication, and planned stage 4 score HTTP behavior.
+        unit: RUT parsing/validation and deterministic synthetic scoring.
+        integration: Bootstrap, health, login, bearer authentication, authorization, error ordering, and score HTTP contracts.
         e2e: No separate E2E harness configured.
       coverage_command: null
       lint_command: null
@@ -53,14 +53,10 @@ testing:
       formatter_command: null
     - path: frontend
       in_scope: false
-      reason: Explicitly deferred by user; no frontend changes authorized.
+      reason: Explicitly deferred; no frontend changes or verification are authorized.
       stack: Next.js 16 App Router / React 19 / TypeScript
       test_command: null
       runner: null
-      test_layers:
-        unit: No runner configured.
-        integration: No runner configured.
-        e2e: No runner configured.
       coverage_command: null
       lint_command: npm run lint -w frontend
       typecheck_command: npm run typecheck -w frontend
@@ -69,36 +65,34 @@ testing:
 
 rules:
   proposal:
-    - Limit implementation to the approved backend-score stage 4.
-    - Protect GET /score/:rut with the existing bearer authentication guard and authorize users only for their own normalized RUT while administrators may consult any valid RUT.
-    - Return exactly rut, score, and fecha on success; keep scoring deterministic and synthetic.
-    - Exclude real scoring models, persistence, external lookup, frontend work, and new dependencies.
-    - Preserve user changes to .gitignore and docs/.
+    - Limit work to backend delivery evidence, focused error/credential-exposure review, and backend-only local setup documentation.
+    - Document Node 24, npm workspaces, local JWT_SECRET generation, workspace startup, synthetic accounts, exact curl examples, the PDF RUT typo, SHA-256 goldens, UTC fecha, and the required AI-use declaration.
+    - Exclude database, real financial scoring, production authentication, SSO, multitenancy, deployment, frontend integration, and speculative hardening or large libraries.
+    - Preserve the original PDF, .gitignore, and frontend.
   specs:
     - Use RFC 2119 requirements and Given/When/Then scenarios.
-    - Do not invent financial risk business rules or provider contracts.
+    - Require a requirements-to-real-test evidence matrix without claiming coverage or complete security.
   design:
-    - Preserve installed versions, NestJS Express adapter, and CommonJS conventions.
-    - Reuse the exported authentication guard, typed principal, and pure RUT utilities through NestJS modules and dependency injection.
-    - Authorize before score computation and keep malformed-token failures at 401 ahead of RUT validation or ownership disclosure.
-    - Derive score from SHA-256 of normalized undotted RUT with its hyphen retained, interpreting the first four digest bytes as unsigned big-endian and applying modulo 101.
-    - Apply Cache-Control no-store to authenticated score responses, including failures where practical at the route boundary.
+    - Prefer documentation-only delivery unless review demonstrates a concrete backend contract defect.
+    - Keep secrets out of tracked files and use only isolated temporary smoke environments with cleanup.
+    - Any runtime fix must be minimal, preserve existing dependencies and architecture, and follow strict TDD.
   tasks:
-    - Group reviewable work units with tests and evidence.
+    - Separate documentation, regression evidence, focused review, and final delivery into reviewable units.
     - Include a Review Workload Forecast before apply.
   apply:
     guidelines:
-      - Strict RED-GREEN-REFACTOR is mandatory; Standard Mode is forbidden.
-      - The user authorized one conventional commit after stage 4; do not push, open a PR, or activate receipt-driven review.
-      - Re-confirm Node 24 runtime and use workspace-root npm test.
+      - Documentation-only work requires structural readback, not an artificial RED test.
+      - Any code bug fix requires strict RED-GREEN-REFACTOR; Standard Mode is forbidden.
+      - Do not modify a real .env; any smoke environment must be temporary and cleaned up.
+      - Create one conventional commit only at close; do not push, open a PR, activate receipt-driven review, or touch frontend.
     tdd: true
     test_command: npm test
   verify:
     test_command: npm test
     build_command: npm run build -w backend
     guidelines:
-      - Report backend evidence only; do not claim frontend test or coverage proof.
-      - No coverage threshold is configured; do not invent one.
+      - Also run npm run typecheck -w backend and npm test -w backend.
+      - Report exact backend evidence and limitations; no coverage threshold exists and no security-complete claim is allowed.
   archive:
-    - Preserve final-state evidence and user-owned files.
-    - Archive only after required verification succeeds.
+    - Record final command evidence, reviewed surfaces, limitations, and the closing commit.
+    - Archive only after all required verification succeeds.
