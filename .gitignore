@@ -29,3 +29,9 @@ lerna-debug.log*
 # Application logs and OS metadata
 *.log
 .DS_Store
+
+# Temporary files
+tmp/
+.temp/
+.tmp/
+logs/
