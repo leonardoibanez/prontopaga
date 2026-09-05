@@ -22,7 +22,13 @@ npm run dev
 - API: http://localhost:3001/api
 - Estado del backend: http://localhost:3001/api/health
 
-La página inicial comprueba la conexión con el backend e incluye estados de carga, error y reintento. Los valores predeterminados permiten iniciar el proyecto sin copiar los archivos de entorno.
+La página inicial comprueba la conexión con el backend e incluye estados de carga, error y reintento. El backend conserva valores predeterminados para el puerto y CORS, pero exige un secreto de firma local.
+
+El backend requiere `JWT_SECRET`; generá uno local antes de iniciarlo:
+
+```bash
+openssl rand -hex 32
+```
 
 ## Estructura
 
@@ -62,12 +68,25 @@ npm run start -w frontend
 | --- | --- | --- |
 | Backend | `PORT` | `3001` |
 | Backend | `FRONTEND_URL` | `http://localhost:3000` |
+| Backend | `JWT_SECRET` | Requerido, sin valor predeterminado |
 | Frontend | `NEXT_PUBLIC_API_URL` | `http://localhost:3001/api` |
 
 `FRONTEND_URL` define el origen permitido por CORS. `NEXT_PUBLIC_API_URL` es una dirección pública utilizada por el navegador e incluye el prefijo `/api`; debe configurarse antes de compilar el frontend. No colocar secretos en variables `NEXT_PUBLIC_*`.
 
+## Autenticación de demostración
+
+`POST /login` emite un token Bearer de 15 minutos para pruebas locales. Las siguientes credenciales son sintéticas y no representan cuentas de producción:
+
+| Usuario | Contraseña | Rol |
+| --- | --- | --- |
+| `demo.admin` | `AdminDemo!2026` | `admin` |
+| `demo.user1` | `UserOneDemo!2026` | `user` |
+| `demo.user2` | `UserTwoDemo!2026` | `user` |
+
+El cliente no puede enviar rol ni RUT en el inicio de sesión; ambos atributos proceden exclusivamente del catálogo del servidor. Esta etapa no incluye registro, renovación de tokens ni rutas de producto protegidas.
+
 ## Alcance inicial
 
-Incluye la estructura ejecutable y la conexión frontend/backend. Aún no incluye autenticación, base de datos, proveedores financieros ni cálculos de riesgo. Las funcionalidades futuras aparecen identificadas como «Próximamente» y no muestran resultados financieros simulados.
+Incluye la estructura ejecutable, la conexión frontend/backend y autenticación de demostración con usuarios sintéticos. Aún no incluye base de datos, proveedores financieros ni cálculos de riesgo. Las funcionalidades futuras aparecen identificadas como «Próximamente» y no muestran resultados financieros simulados.
 
 Referencias oficiales: [NestJS](https://docs.nestjs.com/first-steps) y [Next.js](https://nextjs.org/docs/app/getting-started/installation).
