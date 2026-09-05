@@ -75,7 +75,10 @@ export async function createApplication(
     }),
   );
   app.setGlobalPrefix('api', {
-    exclude: [{ path: 'login', method: RequestMethod.POST }],
+    exclude: [
+      { path: 'login', method: RequestMethod.POST },
+      { path: 'score/:rut', method: RequestMethod.GET },
+    ],
   });
   app.enableCors({ origin: config.frontendUrl });
   app.enableShutdownHooks();

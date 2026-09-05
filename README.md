@@ -83,7 +83,17 @@ npm run start -w frontend
 | `demo.user1` | `UserOneDemo!2026` | `user` |
 | `demo.user2` | `UserTwoDemo!2026` | `user` |
 
-El cliente no puede enviar rol ni RUT en el inicio de sesión; ambos atributos proceden exclusivamente del catálogo del servidor. Esta etapa no incluye registro, renovación de tokens ni rutas de producto protegidas.
+El cliente no puede enviar rol ni RUT en el inicio de sesión; ambos atributos proceden exclusivamente del catálogo del servidor. Esta etapa no incluye registro ni renovación de tokens.
+
+## Consulta sintética protegida
+
+`GET /score/:rut` consulta un puntaje sintético determinista para un RUT chileno válido. La ruta está fuera del prefijo `/api`, requiere un Bearer token y responde con `Cache-Control: no-store`.
+
+```bash
+curl -H "Authorization: Bearer <token>" http://localhost:3001/score/12.345.678-5
+```
+
+Una cuenta `user` sólo puede consultar su propio RUT; `admin` puede consultar cualquier RUT válido. La respuesta contiene únicamente `rut`, `score` (0 a 100) y `fecha`. Es una transformación local de demostración, no un cálculo de riesgo financiero ni una consulta a proveedores.
 
 ## Alcance inicial
 

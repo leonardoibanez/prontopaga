@@ -7,16 +7,16 @@ context: |
   Workspace: npm workspaces backend and frontend; Node >=24 <25.
   Backend: NestJS 11.2.3, Express, TypeScript 5.9.3, CommonJS, strict compiler.
   Frontend: Next.js 16.3.4 App Router and React 19.2.8; explicitly deferred.
-  Architecture: backend AppModule imports HealthModule; GET /api/health remains public.
-  Scope: backend-auth stage 3 only; synthetic-user credential login, short-lived JWT access tokens, and reusable authentication primitives for later backend stages.
+  Architecture: backend AppModule imports HealthModule and AuthModule; GET /api/health remains public, while stage 4 adds protected GET /score/:rut at the literal HTTP root using the existing authentication and RUT boundaries.
+  Scope: backend-score stage 4 only; deterministic synthetic score consultation with ownership-aware authorization and no-store responses.
   Testing: root npm test delegates to backend build and all node:test backend suites; acceptance also runs backend-only build and typecheck.
-  Delivery: the user approved one conventional commit after each stage; no push, PR, or receipt-driven review was authorized.
+  Delivery: the user approved one conventional commit after stage 4; no push, PR, or receipt-driven review was authorized.
   Artifacts: English; preserve existing Spanish application strings and documentation.
 
 strict_tdd: true
 testing:
   detected: "2026-09-04"
-  scope: backend-auth
+  scope: backend-score
   in_scope_projects: [backend]
   deferred_projects: [frontend]
   test_command: npm test
@@ -24,7 +24,7 @@ testing:
   strict_tdd: true
   rationale: >-
     The explicit root test script covers every currently in-scope project (backend),
-    including existing integration tests and planned RUT unit tests.
+    including existing health, authentication, RUT, and planned score tests.
     It does not cover frontend. Re-evaluate Strict TDD before widening scope.
   runtime:
     required: ">=24 <25"
@@ -43,8 +43,8 @@ testing:
       test_script: npm run build && node --test test/*.test.cjs
       runner: node:test
       test_layers:
-        unit: Available runner; existing RUT utility tests remain in scope.
-        integration: node:test suites use the shared effective bootstrap for health and stage 3 authentication HTTP behavior.
+        unit: Available runner; existing RUT utility tests and planned deterministic score tests remain in scope.
+        integration: node:test suites use the shared effective bootstrap for health, authentication, and planned stage 4 score HTTP behavior.
         e2e: No separate E2E harness configured.
       coverage_command: null
       lint_command: null
@@ -69,25 +69,27 @@ testing:
 
 rules:
   proposal:
-    - Limit implementation to the approved backend-auth stage 3.
-    - Keep identities synthetic and server-derived: one administrator and two users; never accept role or RUT from the login payload.
-    - Exclude score routes, refresh tokens, registration, persistence, frontend work, and external identity lookup.
+    - Limit implementation to the approved backend-score stage 4.
+    - Protect GET /score/:rut with the existing bearer authentication guard and authorize users only for their own normalized RUT while administrators may consult any valid RUT.
+    - Return exactly rut, score, and fecha on success; keep scoring deterministic and synthetic.
+    - Exclude real scoring models, persistence, external lookup, frontend work, and new dependencies.
     - Preserve user changes to .gitignore and docs/.
   specs:
     - Use RFC 2119 requirements and Given/When/Then scenarios.
     - Do not invent financial risk business rules or provider contracts.
   design:
     - Preserve installed versions, NestJS Express adapter, and CommonJS conventions.
-    - Use @nestjs/jwt with HS256, a required JWT_SECRET with no fallback, and 900-second access tokens.
-    - Export a reusable guard and typed authenticated principal for stage 4 without adding a score route.
-    - Design test configuration injection without global per-test process.env mutation.
+    - Reuse the exported authentication guard, typed principal, and pure RUT utilities through NestJS modules and dependency injection.
+    - Authorize before score computation and keep malformed-token failures at 401 ahead of RUT validation or ownership disclosure.
+    - Derive score from SHA-256 of normalized undotted RUT with its hyphen retained, interpreting the first four digest bytes as unsigned big-endian and applying modulo 101.
+    - Apply Cache-Control no-store to authenticated score responses, including failures where practical at the route boundary.
   tasks:
     - Group reviewable work units with tests and evidence.
     - Include a Review Workload Forecast before apply.
   apply:
     guidelines:
       - Strict RED-GREEN-REFACTOR is mandatory; Standard Mode is forbidden.
-      - The user authorized one conventional commit after stage 3; do not push, open a PR, or activate receipt-driven review.
+      - The user authorized one conventional commit after stage 4; do not push, open a PR, or activate receipt-driven review.
       - Re-confirm Node 24 runtime and use workspace-root npm test.
     tdd: true
     test_command: npm test
