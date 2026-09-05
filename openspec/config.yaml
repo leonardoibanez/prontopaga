@@ -48,7 +48,8 @@ testing:
     root build, explicit Playwright smoke, and separate backend test/build/typecheck
     commands. This is apply-phase command evidence only; independent SDD verification
     and its verify report remain pending.
-  evidence_path: openspec/changes/archive/2026-09-05-backend-delivery/verify-report.md
+  evidence_path: openspec/changes/frontend-foundation/apply-progress.md
+  historical_backend_evidence_path: openspec/changes/archive/2026-09-05-backend-delivery/verify-report.md
   coverage_command: null
   coverage_threshold: null
   projects:
