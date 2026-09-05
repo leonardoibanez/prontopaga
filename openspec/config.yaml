@@ -5,39 +5,56 @@ sdd:
 
 context: |
   Workspace: npm workspaces backend and frontend; Node >=24 <25.
-  Backend: NestJS 11.2.3, Express, TypeScript 5.9.3, CommonJS, strict compiler.
-  Frontend: explicitly deferred; this stage must not modify or integrate it.
-  Architecture: GET /api/health is public; POST /login and protected GET /score/:rut are literal root routes. Authentication uses three synthetic identities and HS256 tokens; score access is owner-or-admin and responses are no-store.
-  Scope: backend-delivery stage 5 only; backend regression evidence, focused error/credential-exposure review, and fresh-developer backend-only documentation.
-  Testing: root npm test delegates to backend build and all 30 node:test tests; acceptance also runs backend-only build and typecheck. Final backend-delivery evidence observed all four exact commands passing with 30 tests.
-  Delivery: exception-ok with no chain; one conventional commit is authorized at close. No push, PR, receipt-driven review, or frontend work is authorized.
-  Artifacts: SDD artifacts are English; extend the repository's Spanish documentation convention.
+  Backend: NestJS 11 / Express / TypeScript / CommonJS; completed backend stages remain regression baseline.
+  Frontend: Next.js 16 App Router / React 19 / strict TypeScript; preserve Spanish UI and existing teal plain CSS.
+  Architecture: retain backend GET /api/health, root POST /login, and protected root GET /score/:rut; planned browser traffic uses same-origin Next BFF routes.
+  Scope: frontend-foundation first, then authentication, protected RUT score, responsive accessible experience, and real-backend E2E delivery.
+  Testing: strict TDD is required; frontend foundation now provides Vitest/RTL/jsdom fast coverage, and root npm test runs backend plus frontend suites. Playwright production smoke remains separate from the fast regression command.
+  Delivery: automatic progression through approved stages; conventional commits at stage closure are parent-owned. No push, PR, or receipt-driven review.
+  Artifacts: SDD technical artifacts are English; existing Spanish UI and documentation remain Spanish.
 
 strict_tdd: true
 testing:
-  detected: "2026-09-04"
-  scope: backend-delivery
-  in_scope_projects: [backend]
-  deferred_projects: [frontend]
+  detected: "2026-09-05"
+  scope: frontend-foundation
+  in_scope_projects: [backend, frontend]
+  deferred_projects: []
   test_command: npm test
   command_cwd: workspace-root
+  current_test_script: npm run test -w backend && npm run test -w frontend
+  current_test_scope: backend regression plus frontend unit/component/route tests
+  workspace_command_covers_all_in_scope_projects: true
   strict_tdd: true
+  strict_tdd_ready: true
   rationale: >-
-    The root test script covers every in-scope backend suite. Documentation-only
-    edits use structural readback; any discovered runtime regression requires a
-    behavioral failing test followed by RED, GREEN, and REFACTOR.
+    Strict TDD remains the explicitly mandated policy. Frontend foundation now
+    provides a runnable Vitest suite and root npm test covers both workspaces;
+    browser smoke remains explicit. Standard Mode remains forbidden, and later
+    frontend product behavior must record real RED, GREEN, and REFACTOR evidence.
   runtime:
     required: ">=24 <25"
     verified_version: 24.20.0
-    executable: portable Node 24 runtime (verified 24.20.0)
+    verification_source: Frontend-foundation apply execution under the portable Node 24 runtime; historical backend-delivery evidence is retained separately below.
+    executable: portable Node 24 runtime
     invocation: 'PATH="<node-24-bin>:$PATH" npm test'
-    note: Verification used Node 24.20.0 from a temporary runtime path; the path is environment-specific and is not a required global location. No global environment changes were made.
-  execution_evidence: Backend-delivery final evidence reports 30 passing backend tests and four exact root-scoped commands passed: npm run build -w backend, npm run typecheck -w backend, npm test -w backend, and npm test.
+    note: Use an explicit process-local PATH; do not change the global environment.
+  historical_backend_evidence: >-
+    The archived backend-delivery report records its historical 30-test backend
+    baseline and four backend commands. It is retained as prior-stage context,
+    not as frontend-foundation evidence.
+  execution_evidence: >-
+    Frontend-foundation apply execution used Node 24.20.0 and recorded successful
+    root npm test (30 backend + 22 frontend tests), root lint, root typecheck,
+    root build, explicit Playwright smoke, and separate backend test/build/typecheck
+    commands. This is apply-phase command evidence only; independent SDD verification
+    and its verify report remain pending.
+  evidence_path: openspec/changes/archive/2026-09-05-backend-delivery/verify-report.md
   coverage_command: null
   coverage_threshold: null
   projects:
     - path: backend
       in_scope: true
+      role: regression-baseline
       stack: NestJS 11 / Express / TypeScript / CommonJS
       test_command: npm run test -w backend
       test_script: npm run build && node --test test/*.test.cjs
@@ -52,47 +69,87 @@ testing:
       build_command: npm run build -w backend
       formatter_command: null
     - path: frontend
-      in_scope: false
-      reason: Explicitly deferred; no frontend changes or verification are authorized.
-      stack: Next.js 16 App Router / React 19 / TypeScript
-      test_command: null
-      runner: null
+      in_scope: true
+      role: active-foundation
+      stack: Next.js 16 App Router / React 19 / strict TypeScript
+      test_command: npm run test -w frontend
+      test_script: vitest run
+      runner: Vitest 5
+      test_layers:
+        unit: Server-only backend-origin validation and App Router health proxy contracts.
+        integration: React Testing Library client health state, retry, and cancellation behavior.
+        e2e: Playwright Chromium production smoke using isolated Next and Nest listeners.
       coverage_command: null
       lint_command: npm run lint -w frontend
       typecheck_command: npm run typecheck -w frontend
       build_command: npm run build -w frontend
       formatter_command: null
+  planned:
+    status: implemented-awaiting-independent-verify
+    foundation_tools: [Vitest, React Testing Library, Playwright]
+    frontend_test_command: npm run test -w frontend
+    frontend_test_command_note: Vitest fast suite runs without a backend listener.
+    root_test_command: npm test
+    root_test_scope: Backend regression plus frontend unit/component/route tests; browser smoke is separate.
+    e2e_command: npm run test:e2e
+    e2e_note: Separate Playwright Chromium production smoke starts owned Nest and Next processes on 127.0.0.1:3101 and :3100 without listener reuse.
+    prerequisite: Established; behavioral RED evidence preceded same-origin client and route implementation, then GREEN checks passed. Independent SDD verification remains pending.
+
+frontend_plan:
+  approved_stages:
+    - Foundation test harness and same-origin health integration.
+    - Authentication BFF with HttpOnly session cookie.
+    - Protected RUT score lookup.
+    - Responsive accessible Spanish experience using existing teal plain CSS.
+    - Delivery evidence with real-backend E2E.
+  current_state:
+    browser_backend_configuration: Browser health traffic uses same-origin /api/health; frontend/.env.example documents server-only BACKEND_URL without an /api suffix.
+    health_client: frontend/src/components/api-status.tsx calls same-origin /api/health and aborts stale requests.
+    bff_routes: GET /api/health is implemented; authentication and score BFF routes remain deferred.
+  target_contract:
+    configuration: Server-only BACKEND_URL is the backend origin/base URL without an /api suffix.
+    health: Browser GET /api/health maps to backend GET /api/health.
+    authentication: Future browser POST /api/auth/login and POST /api/auth/logout; login maps to backend POST /login.
+    score: Future browser GET /api/score/:rut maps to protected backend GET /score/:rut.
+    session: HttpOnly cookie; Secure in production; SameSite=Lax; lifetime must not outlive JWT expiry or the 900-second limit.
+    mutations: Check request Origin against an explicitly configured trusted origin; cookie flags alone are not mutation protection.
+    authorization: Preserve backend owner-or-admin authorization and all existing API response contracts.
+    privacy: Keep backend bearer tokens server-side; do not expose secrets through browser configuration, logs, or committed files.
+  deferred_until_later_stages: Authentication, score, and final experience/delivery are approved roadmap items, not foundation implementation scope.
 
 rules:
   proposal:
-    - Limit work to backend delivery evidence, focused error/credential-exposure review, and backend-only local setup documentation.
-    - Document Node 24, npm workspaces, local JWT_SECRET generation, workspace startup, synthetic accounts, exact curl examples, the PDF RUT typo, SHA-256 goldens, UTC fecha, and the required AI-use declaration.
-    - Exclude database, real financial scoring, production authentication, SSO, multitenancy, deployment, frontend integration, and speculative hardening or large libraries.
-    - Preserve the original PDF, .gitignore, and frontend.
+    - Scope the first change to frontend-foundation harness and health; retain later approved stages as roadmap only.
+    - Preserve Next.js 16, React 19, Spanish UI, plain teal CSS, and unchanged backend API contracts.
+    - Preserve completed backend specs and archived artifacts; do not rewrite backend history.
+    - Exclude database, real financial scoring, SSO, multitenancy, deployment, and speculative hardening.
   specs:
-    - Use RFC 2119 requirements and Given/When/Then scenarios.
-    - Require a requirements-to-real-test evidence matrix without claiming coverage or complete security.
+    - Use RFC 2119 requirements and Given/When/Then scenarios with real-test evidence mapping.
+    - Distinguish currently available commands from planned harness commands; do not claim coverage or complete security.
   design:
-    - Prefer documentation-only delivery unless review demonstrates a concrete backend contract defect.
-    - Keep secrets out of tracked files and use only isolated temporary smoke environments with cleanup.
-    - Any runtime fix must be minimal, preserve existing dependencies and architecture, and follow strict TDD.
+    - Keep BACKEND_URL server-only and browser requests same-origin; do not reuse the current public URL configuration as the target design.
+    - Establish the frontend harness before product behavior and keep browser E2E separate from root fast regression.
+    - Preserve the approved cookie, expiry, configured Origin, and backend authorization boundaries for later authentication and score stages.
+    - Verify Next.js 16-specific APIs against current official documentation; the loaded Next.js 15 skill does not authorize a framework downgrade.
   tasks:
-    - Separate documentation, regression evidence, focused review, and final delivery into reviewable units.
-    - Include a Review Workload Forecast before apply.
+    - Start foundation with harness and root-command wiring, then meaningful RED-GREEN-REFACTOR behavior work.
+    - Include backend regressions, frontend lint/typecheck/build, separate E2E evidence, and a Review Workload Forecast.
   apply:
     guidelines:
-      - Documentation-only work requires structural readback, not an artificial RED test.
-      - Any code bug fix requires strict RED-GREEN-REFACTOR; Standard Mode is forbidden.
-      - Do not modify a real .env; any smoke environment must be temporary and cleaned up.
-      - Create one conventional commit only at close; do not push, open a PR, activate receipt-driven review, or touch frontend.
+      - Strict RED-GREEN-REFACTOR is mandatory; Standard Mode is forbidden despite the initially missing frontend runner.
+      - Before frontend product behavior, establish the harness and expand root npm test to cover both in-scope workspaces.
+      - Refresh current testing capabilities only after new commands exist and have been exercised; keep planned commands separate until then.
+      - Do not modify a real .env; use temporary isolated smoke environments with cleanup.
+      - Stage-closing conventional commits are parent-owned; no push, PR, or receipt-driven review.
     tdd: true
     test_command: npm test
   verify:
     test_command: npm test
-    build_command: npm run build -w backend
+    build_command: npm run build
     guidelines:
-      - Also run npm run typecheck -w backend and npm test -w backend.
-      - Report exact backend evidence and limitations; no coverage threshold exists and no security-complete claim is allowed.
+      - Require root npm test to cover backend and frontend before claiming frontend-foundation completion.
+      - Run root npm run typecheck and npm run lint, plus the separate E2E command once actually implemented.
+      - Preserve exact command outcomes and cleanup evidence; historical backend proof is not current frontend proof.
   archive:
-    - Record final command evidence, reviewed surfaces, limitations, and the closing commit.
-    - Archive only after all required verification succeeds.
+    - Record final stage evidence, limitations, and parent-owned closing commit; retain all prior backend artifacts.
+    - Archive only after required verification succeeds.

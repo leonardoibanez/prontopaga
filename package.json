@@ -11,7 +11,8 @@
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "lint": "npm run lint -w frontend",
-    "test": "npm run test -w backend"
+    "test": "npm run test -w backend && npm run test -w frontend",
+    "test:e2e": "npm run test:e2e -w frontend"
   },
   "devDependencies": { "concurrently": "^9.2.0" }
 }

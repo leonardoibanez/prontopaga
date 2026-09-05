@@ -4,6 +4,16 @@ import { useEffect, useState } from 'react';
 
 type Status = 'loading' | 'connected' | 'error';
 
+function isHealthyResponse(body: unknown): body is { status: 'ok'; service: string; timestamp: string } {
+  if (!body || typeof body !== 'object') return false;
+
+  const health = body as Record<string, unknown>;
+  return health.status === 'ok'
+    && typeof health.service === 'string'
+    && health.service.length > 0
+    && typeof health.timestamp === 'string';
+}
+
 export function ApiStatus() {
   const [status, setStatus] = useState<Status>('loading');
   const [attempt, setAttempt] = useState(0);
@@ -12,17 +22,16 @@ export function ApiStatus() {
     const controller = new AbortController();
     let active = true;
     const timeout = setTimeout(() => controller.abort(), 8000);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
     async function checkConnection() {
       try {
-        const response = await fetch(`${apiUrl.replace(/\/$/, '')}/health`, {
+        const response = await fetch('/api/health', {
           signal: controller.signal,
           cache: 'no-store',
         });
         if (!response.ok) throw new Error('API no disponible');
         const body: unknown = await response.json();
-        if (!body || typeof body !== 'object' || !('status' in body) || body.status !== 'ok') {
+        if (!isHealthyResponse(body)) {
           throw new Error('Respuesta no válida');
         }
         if (active) setStatus('connected');
@@ -46,7 +55,7 @@ export function ApiStatus() {
           <p>{status === 'error' ? 'No pudimos conectar. Intenta nuevamente en unos momentos.' : 'Estado de conexión con Consulta Riesgo Financiero.'}</p>
         </div>
       </div>
-      <button type="button" disabled={status === 'loading'} onClick={() => { setStatus('loading'); setAttempt((value) => value + 1); }}>
+      <button type="button" onClick={() => { setStatus('loading'); setAttempt((value) => value + 1); }}>
         {status === 'loading' ? 'Comprobando…' : 'Verificar conexión'}
       </button>
     </section>
