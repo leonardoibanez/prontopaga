@@ -21,7 +21,7 @@ export default defineConfig({
       gracefulShutdown: { signal: 'SIGTERM', timeout: 5_000 },
     },
     {
-      command: `cd .. && npm run build -w frontend && BACKEND_URL=http://127.0.0.1:${backendPort} npm run start -w frontend -- --hostname 127.0.0.1 --port ${frontendPort}`,
+      command: `cd .. && npm run build -w frontend && APP_ORIGIN=http://127.0.0.1:${frontendPort} BACKEND_URL=http://127.0.0.1:${backendPort} npm run start -w frontend -- --hostname 127.0.0.1 --port ${frontendPort}`,
       url: `http://127.0.0.1:${frontendPort}/api/health`,
       reuseExistingServer: false,
       timeout: 90_000,

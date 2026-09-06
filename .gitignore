@@ -30,6 +30,11 @@ lerna-debug.log*
 *.log
 .DS_Store
 
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+
 # Temporary files
 tmp/
 .temp/
