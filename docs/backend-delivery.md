@@ -13,7 +13,7 @@ npm run build -w backend
 npm run start -w backend
 ```
 
-El comando de instalación usa el workspace `backend` e incluye el workspace raíz; no instala ni inicia el frontend. El script `start` del backend ejecuta `node dist/main.js` desde el directorio del workspace. El secreto se genera sólo para la sesión de shell y no debe guardarse, imprimirse ni copiarse a un archivo `.env` real. Sin un `JWT_SECRET` no vacío, el arranque falla deliberadamente.
+El comando de instalación usa el workspace `backend` e incluye el workspace raíz; no instala ni inicia el frontend. El script `start` del backend ejecuta `node dist/main.js` desde el directorio del workspace. El secreto se genera sólo para la sesión de shell y no debe guardarse, imprimirse ni copiarse a un archivo `.env` real. Sin un `JWT_SECRET` de al menos 32 bytes, el arranque falla deliberadamente.
 
 El puerto local predeterminado es `3001`. Para usar otro, exportar un `PORT` entero entre `1` y `65535` antes del arranque. El valor de `FRONTEND_URL` sólo configura CORS y no es necesario para estas comprobaciones de backend.
 
@@ -23,9 +23,10 @@ El puerto local predeterminado es `3001`. Para usar otro, exportar un `PORT` ent
 | --- | --- | --- |
 | `GET /api/health` | No | `200` con estado y marca temporal |
 | `POST /login` | No | `200` y contrato Bearer para credenciales sintéticas válidas |
+| `GET /me` | Bearer | `200` con rol, RUT opcional y expiración verificados |
 | `GET /score/:rut` | Bearer | `200`, `400`, `401` o `403`; siempre `Cache-Control: no-store` |
 
-`/api/health` conserva el prefijo `/api`. En cambio, `POST /login` y `GET /score/:rut` son rutas raíz: no usar `/api/login` ni `/api/score/...`.
+`/api/health` conserva el prefijo `/api`. En cambio, `POST /login`, `GET /me` y `GET /score/:rut` son rutas raíz.
 
 ### Identidades sintéticas
 
@@ -92,12 +93,13 @@ Los valores `87`, `33` y `83` son resultados sintéticos y deterministas de SHA-
 
 ## Evidencia de regresión
 
-Ejecutar los cuatro comandos desde la raíz, con Node 24 disponible en `PATH`:
+Ejecutar los siguientes comandos desde la raíz, con Node 24 disponible en `PATH`:
 
 ```bash
 npm run build -w backend
 npm run typecheck -w backend
 npm test -w backend
+npm run test:coverage -w backend
 npm test
 ```
 
@@ -110,7 +112,7 @@ La evidencia de esta entrega se ejecutó con Node `24.20.0` y registró los sigu
 | `npm test -w backend` | exit 0; 30 pruebas aprobadas | `90736e23a5f99248b172f3bd2c01fef5113d1e2e9b5c23eaef4d51a0c1eeb748` |
 | `npm test` | exit 0; 30 pruebas aprobadas | `2ec9f33d25010e1414184352d09f2c4f148b4faa1a8c834e927102ba154f44fb` |
 
-No hay umbral de cobertura configurado. Estos resultados prueban las rutas indicadas en este repositorio y no constituyen una garantía de cobertura total, seguridad completa ni aptitud de producción.
+Los hashes y conteos de la tabla anterior son evidencia histórica anterior al endurecimiento actual. El estado vigente configura cobertura con umbrales obligatorios; debe verificarse mediante `npm run test:coverage` y CI, no mediante esos hashes históricos.
 
 ## Matriz de requisitos y pruebas
 

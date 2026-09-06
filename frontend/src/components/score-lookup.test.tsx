@@ -51,6 +51,5 @@ describe('ScoreLookup', () => {
     await userEvent.setup().click(screen.getByRole('button', { name: 'Consultar score' }));
 
     await waitFor(() => expect(onUnauthenticated).toHaveBeenCalled());
-    expect(await screen.findByRole('alert')).toHaveTextContent('Tu sesión expiró. Inicia sesión nuevamente.');
   });
 });

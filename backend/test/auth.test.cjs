@@ -106,6 +106,28 @@ test('POST /login accepts exact demo credentials and returns the bearer contract
   assert.equal(payload.role, 'admin');
   assert.equal('rut' in payload, false);
   assert.equal(payload.exp - payload.iat, 900);
+  assert.equal(payload.iss, 'consulta-riesgo-backend');
+  assert.equal(payload.aud, 'consulta-riesgo-frontend');
+});
+
+test('GET /me returns only the verified public session and expiry', async (t) => {
+  const app = await startApplication(t);
+  const loginResponse = await login(app, {
+    username: 'demo.user1',
+    password: 'UserOneDemo!2026',
+  });
+  const accessToken = (await loginResponse.json()).access_token;
+  const response = await fetch(`${await app.getUrl()}/me`, {
+    headers: { authorization: `Bearer ${accessToken}` },
+  });
+
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.deepEqual(Object.keys(body).sort(), ['expires_at', 'role', 'rut']);
+  assert.equal(body.role, 'user');
+  assert.equal(body.rut, '12345678-5');
+  assert.ok(Number.isInteger(body.expires_at));
+  assert.equal(JSON.stringify(body).includes(accessToken), false);
 });
 
 test('POST /login issues server-derived claims for all three synthetic identities', async (t) => {
@@ -259,6 +281,8 @@ test('AuthGuard uniformly denies malformed, untrusted, expired, and claim-drift 
     `Bearer ${jwt.sign({ sub: 'unknown-user', role: 'user', rut: '12345678-5' })}`,
     `Bearer ${jwt.sign({ sub: 'synthetic-user-001', role: 'admin' })}`,
     `Bearer ${jwt.sign({ sub: 'synthetic-user-001', role: 'user', rut: '11111111-1' })}`,
+    `Bearer ${jwt.sign({ sub: 'synthetic-user-001', role: 'user', rut: '12345678-5' }, { issuer: 'wrong-issuer' })}`,
+    `Bearer ${jwt.sign({ sub: 'synthetic-user-001', role: 'user', rut: '12345678-5' }, { audience: 'wrong-audience' })}`,
     `Bearer ${signRawHs256({ sub: 'synthetic-user-001', role: 'user', rut: '12345678-5', iat: 'not-a-number', exp: Math.floor(Date.now() / 1000) + 900 })}`,
   ];
 
@@ -267,4 +291,34 @@ test('AuthGuard uniformly denies malformed, untrusted, expired, and claim-drift 
     assert.throws(() => guard.canActivate(guardContext(request)), { status: 401 });
     assert.equal(request.user, undefined);
   }
+});
+
+test('POST /login rate limits repeated attempts and advertises retry time', async (t) => {
+  const app = await startApplication(t);
+  let response;
+  for (let attempt = 0; attempt < 11; attempt += 1) {
+    response = await login(app, {
+      username: 'demo.user1',
+      password: 'WrongPass!2026',
+    });
+  }
+
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get('retry-after'), '60');
+});
+
+test('production mode does not expose synthetic identities', async (t) => {
+  const app = await createApplication(parseBootstrapConfig({
+    NODE_ENV: 'production',
+    DEMO_MODE: 'false',
+    JWT_SECRET: TEST_JWT_SECRET,
+  }), { logger: false });
+  t.after(() => app.close());
+  await app.listen(0, '127.0.0.1');
+
+  const response = await login(app, {
+    username: 'demo.admin',
+    password: 'AdminDemo!2026',
+  });
+  assert.equal(response.status, 401);
 });

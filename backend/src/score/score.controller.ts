@@ -2,9 +2,10 @@ import { Controller, Get, Param, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
 import type { AuthenticatedPrincipal } from '../auth/auth.types';
 import { ScoreService } from './score.service';
+import { ScoreRateLimitGuard } from './score-rate-limit.guard';
 
 @Controller('score')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, ScoreRateLimitGuard)
 export class ScoreController {
   constructor(private readonly scoreService: ScoreService) {}
 

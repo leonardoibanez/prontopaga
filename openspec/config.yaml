@@ -9,14 +9,14 @@ context: |
   Frontend: Next.js 16 App Router / React 19 / strict TypeScript; preserve Spanish UI and existing teal plain CSS.
   Architecture: retain backend GET /api/health, root POST /login, and protected root GET /score/:rut; planned browser traffic uses same-origin Next BFF routes.
   Scope: frontend-foundation first, then authentication, protected RUT score, responsive accessible experience, and real-backend E2E delivery.
-  Testing: strict TDD is required; frontend foundation now provides Vitest/RTL/jsdom fast coverage, and root npm test runs backend plus frontend suites. Playwright production smoke remains separate from the fast regression command.
+  Testing: root tests cover both workspaces; coverage thresholds are mandatory through npm run test:coverage. Playwright covers desktop and mobile Chromium separately.
   Delivery: automatic progression through approved stages; conventional commits at stage closure are parent-owned. No push, PR, or receipt-driven review.
   Artifacts: SDD technical artifacts are English; existing Spanish UI and documentation remain Spanish.
 
 strict_tdd: true
 testing:
   detected: "2026-09-05"
-  scope: frontend-foundation
+  scope: hardened-full-stack-mvp
   in_scope_projects: [backend, frontend]
   deferred_projects: []
   test_command: npm test
@@ -50,8 +50,8 @@ testing:
     and its verify report remain pending.
   evidence_path: openspec/changes/frontend-foundation/apply-progress.md
   historical_backend_evidence_path: openspec/changes/archive/2026-09-05-backend-delivery/verify-report.md
-  coverage_command: null
-  coverage_threshold: null
+  coverage_command: npm run test:coverage
+  coverage_threshold: backend 95 lines/75 branches/95 functions; frontend 85 lines/80 branches/85 functions/85 statements
   projects:
     - path: backend
       in_scope: true
@@ -64,8 +64,8 @@ testing:
         unit: RUT parsing/validation and deterministic synthetic scoring.
         integration: Bootstrap, health, login, bearer authentication, authorization, error ordering, and score HTTP contracts.
         e2e: No separate E2E harness configured.
-      coverage_command: null
-      lint_command: null
+      coverage_command: npm run test:coverage -w backend
+      lint_command: npm run lint -w backend
       typecheck_command: npm run typecheck -w backend
       build_command: npm run build -w backend
       formatter_command: null
@@ -80,13 +80,13 @@ testing:
         unit: Server-only backend-origin validation and App Router health proxy contracts.
         integration: React Testing Library client health state, retry, and cancellation behavior.
         e2e: Playwright Chromium production smoke using isolated Next and Nest listeners.
-      coverage_command: null
+      coverage_command: npm run test:coverage -w frontend
       lint_command: npm run lint -w frontend
       typecheck_command: npm run typecheck -w frontend
       build_command: npm run build -w frontend
       formatter_command: null
   planned:
-    status: implemented-awaiting-independent-verify
+    status: implemented-hardened-awaiting-independent-verify
     foundation_tools: [Vitest, React Testing Library, Playwright]
     frontend_test_command: npm run test -w frontend
     frontend_test_command_note: Vitest fast suite runs without a backend listener.
@@ -106,17 +106,17 @@ frontend_plan:
   current_state:
     browser_backend_configuration: Browser health traffic uses same-origin /api/health; frontend/.env.example documents server-only BACKEND_URL without an /api suffix.
     health_client: frontend/src/components/api-status.tsx calls same-origin /api/health and aborts stale requests.
-    bff_routes: GET /api/health is implemented; authentication and score BFF routes remain deferred.
+    bff_routes: Health, authentication, verified session, logout, and score routes are implemented with bounded upstream JSON reads.
   target_contract:
     configuration: Server-only BACKEND_URL is the backend origin/base URL without an /api suffix.
     health: Browser GET /api/health maps to backend GET /api/health.
-    authentication: Future browser POST /api/auth/login and POST /api/auth/logout; login maps to backend POST /login.
-    score: Future browser GET /api/score/:rut maps to protected backend GET /score/:rut.
+    authentication: Browser POST /api/auth/login and POST /api/auth/logout; login maps to backend POST /login and verifies the token through GET /me.
+    score: Browser GET /api/score/:rut maps to protected backend GET /score/:rut.
     session: HttpOnly cookie; Secure in production; SameSite=Lax; lifetime must not outlive JWT expiry or the 900-second limit.
     mutations: Check request Origin against an explicitly configured trusted origin; cookie flags alone are not mutation protection.
     authorization: Preserve backend owner-or-admin authorization and all existing API response contracts.
     privacy: Keep backend bearer tokens server-side; do not expose secrets through browser configuration, logs, or committed files.
-  deferred_until_later_stages: Authentication, score, and final experience/delivery are approved roadmap items, not foundation implementation scope.
+  deferred_until_later_stages: Real identity provider, shared distributed rate limiting, token revocation, and production deployment remain outside the synthetic MVP scope.
 
 rules:
   proposal:

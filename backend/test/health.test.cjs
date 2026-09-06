@@ -26,8 +26,12 @@ test('parseBootstrapConfig conserva los valores explícitos', () => {
     }),
     {
       frontendUrl: 'https://cliente.example',
+      host: '127.0.0.1',
       port: 4567,
       jwtSecret: TEST_JWT_SECRET,
+      jwtIssuer: 'consulta-riesgo-backend',
+      jwtAudience: 'consulta-riesgo-frontend',
+      demoMode: true,
     },
   );
 });
@@ -35,15 +39,34 @@ test('parseBootstrapConfig conserva los valores explícitos', () => {
 test('parseBootstrapConfig aplica ambos valores predeterminados', () => {
   assert.deepEqual(parseBootstrapConfig({ JWT_SECRET: TEST_JWT_SECRET }), {
     frontendUrl: 'http://localhost:3000',
+    host: '127.0.0.1',
     port: 3001,
     jwtSecret: TEST_JWT_SECRET,
+    jwtIssuer: 'consulta-riesgo-backend',
+    jwtAudience: 'consulta-riesgo-frontend',
+    demoMode: true,
   });
 });
 
-test('parseBootstrapConfig falla cuando JWT_SECRET falta o está vacío', () => {
-  for (const JWT_SECRET of [undefined, '', '   ']) {
+test('parseBootstrapConfig falla cuando JWT_SECRET falta, es débil o contiene espacios exteriores', () => {
+  for (const JWT_SECRET of [undefined, '', '   ', 'x'.repeat(31), ` ${TEST_JWT_SECRET}`]) {
     assert.throws(() => parseBootstrapConfig({ JWT_SECRET }));
   }
+});
+
+test('parseBootstrapConfig rechaza orígenes inseguros y modo demo en producción', () => {
+  for (const FRONTEND_URL of ['*', 'http://cliente.example', 'https://user:pass@cliente.example']) {
+    assert.throws(() => parseBootstrapConfig({ FRONTEND_URL, JWT_SECRET: TEST_JWT_SECRET }));
+  }
+  assert.throws(() => parseBootstrapConfig({
+    NODE_ENV: 'production',
+    DEMO_MODE: 'true',
+    JWT_SECRET: TEST_JWT_SECRET,
+  }));
+  assert.equal(parseBootstrapConfig({
+    NODE_ENV: 'production',
+    JWT_SECRET: TEST_JWT_SECRET,
+  }).demoMode, false);
 });
 
 test('createApplication también rechaza una configuración con JWT_SECRET vacío', async () => {
@@ -51,8 +74,12 @@ test('createApplication también rechaza una configuración con JWT_SECRET vací
     createApplication(
       {
         frontendUrl: 'http://localhost:3000',
+        host: '127.0.0.1',
         port: 3001,
         jwtSecret: '   ',
+        jwtIssuer: 'consulta-riesgo-backend',
+        jwtAudience: 'consulta-riesgo-frontend',
+        demoMode: true,
       },
       { logger: false },
     ),
@@ -70,13 +97,16 @@ test('parseBootstrapConfig rechaza puertos inválidos con el mensaje existente',
 
 test('GET /api/health responde con el estado del servicio', async (t) => {
   const app = await startApplication(t, { JWT_SECRET: TEST_JWT_SECRET });
-  const response = await fetch(`${await app.getUrl()}/api/health`);
+  const response = await fetch(`${await app.getUrl()}/api/health`, {
+    headers: { 'x-request-id': 'health-test-request' },
+  });
 
   assert.equal(response.status, 200);
   const body = await response.json();
   assert.equal(body.status, 'ok');
   assert.equal(body.service, 'Consulta Riesgo Financiero');
   assert.ok(Number.isFinite(Date.parse(body.timestamp)));
+  assert.equal(response.headers.get('x-request-id'), 'health-test-request');
 });
 
 test('la ruta de health sin el prefijo api no reemplaza el contrato', async (t) => {
@@ -117,6 +147,15 @@ test('CORS usa el origen predeterminado cuando FRONTEND_URL no está definido', 
   });
 
   assert.equal(response.headers.get('access-control-allow-origin'), frontendUrl);
+});
+
+test('CORS no concede acceso a un origen diferente', async (t) => {
+  const app = await startApplication(t, { JWT_SECRET: TEST_JWT_SECRET });
+  const response = await fetch(`${await app.getUrl()}/api/health`, {
+    headers: { origin: 'https://evil.test' },
+  });
+
+  assert.equal(response.headers.get('access-control-allow-origin'), null);
 });
 
 test('el cierre de la aplicación libera el servidor efímero', async (t) => {

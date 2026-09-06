@@ -16,6 +16,7 @@ a { color: inherit; text-decoration: none; }
 .field input { width: 100%; border: 1px solid #bdcfca; border-radius: 8px; padding: 12px 14px; font: inherit; color: var(--ink); background: white; }
 .field input:focus { outline: 3px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
 .alert { margin: 0; padding: 12px 14px; border-radius: 8px; background: #fdf2f1; color: #9b2f28; font-size: 14px; line-height: 1.5; }
+.session-alert { max-width: 520px; margin-bottom: 16px; }
 .primary { background: var(--ink); color: white; border-color: var(--ink); }
 .primary:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: white; }
 .hint { color: var(--muted); font-size: 13px; }

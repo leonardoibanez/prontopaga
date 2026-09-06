@@ -17,6 +17,7 @@ import {
 interface RequestWithPrincipal {
   readonly headers: { readonly authorization?: string };
   user?: AuthenticatedPrincipal;
+  tokenExpiresAt?: number;
 }
 
 type UntrustedClaims = Record<string, unknown>;
@@ -38,6 +39,7 @@ export class AuthGuard implements CanActivate {
         algorithms: ['HS256'],
       });
       request.user = this.toPrincipal(claims);
+      request.tokenExpiresAt = claims.exp as number;
       return true;
     } catch {
       throw new UnauthorizedException();

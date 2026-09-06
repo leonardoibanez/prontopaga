@@ -144,3 +144,16 @@ test('GET /score/:rut has the exact root contract and remains deterministic acro
     body: JSON.stringify({ username: 'demo.admin', password: 'AdminDemo!2026' }),
   })).status, 200);
 });
+
+test('GET /score/:rut rate limits an authenticated principal', async (t) => {
+  const app = await startApplication(t);
+  const token = await login(app, 'demo.user1', 'UserOneDemo!2026');
+  let response;
+  for (let attempt = 0; attempt < 61; attempt += 1) {
+    response = await score(app, '12345678-5', `Bearer ${token}`);
+  }
+
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get('retry-after'), '60');
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+});

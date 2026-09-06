@@ -11,10 +11,13 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${frontendPort}`,
     trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile-chromium', use: { ...devices['Pixel 7'] } },
+  ],
   webServer: [
     {
-      command: `cd .. && npm run build -w backend && PORT=${backendPort} FRONTEND_URL=http://127.0.0.1:${frontendPort} JWT_SECRET=playwright-synthetic-secret npm run start -w backend`,
+      command: `cd .. && npm run build -w backend && PORT=${backendPort} HOST=127.0.0.1 FRONTEND_URL=http://127.0.0.1:${frontendPort} DEMO_MODE=true JWT_SECRET=playwright-synthetic-secret-with-at-least-32-bytes npm run start -w backend`,
       url: `http://127.0.0.1:${backendPort}/api/health`,
       reuseExistingServer: false,
       timeout: 60_000,

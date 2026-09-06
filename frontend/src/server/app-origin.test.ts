@@ -14,6 +14,7 @@ describe('getAppOrigin', () => {
     '',
     '/login',
     'ftp://app.example.test',
+    'http://app.example.test',
     'https://user:password@app.example.test',
     'https://app.example.test?debug=true',
     'https://app.example.test#fragment',

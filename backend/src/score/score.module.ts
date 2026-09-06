@@ -14,6 +14,7 @@ import {
   SCORE_CLOCK,
   ScoreService,
 } from './score.service';
+import { ScoreRateLimitGuard } from './score-rate-limit.guard';
 
 @Injectable()
 export class NoStoreScoreMiddleware implements NestMiddleware {
@@ -36,6 +37,7 @@ export class ScoreModule implements NestModule {
       controllers: [ScoreController],
       providers: [
         ScoreService,
+        ScoreRateLimitGuard,
         NoStoreScoreMiddleware,
         { provide: SCORE_CALCULATOR, useValue: calculateSyntheticScore },
         { provide: SCORE_CLOCK, useValue: () => new Date() },

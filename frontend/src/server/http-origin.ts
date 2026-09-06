@@ -17,7 +17,9 @@ export function parseAbsoluteHttpOrigin(value: string | undefined, message: stri
     || url.search
     || url.hash
     || url.pathname !== '/';
-  if (!url.hostname || !['http:', 'https:'].includes(url.protocol) || hasUnsafeParts) {
+  const loopbackHosts = new Set(['localhost', '127.0.0.1', '[::1]']);
+  const insecureRemoteOrigin = url.protocol === 'http:' && !loopbackHosts.has(url.hostname);
+  if (!url.hostname || !['http:', 'https:'].includes(url.protocol) || hasUnsafeParts || insecureRemoteOrigin) {
     throw new Error(message);
   }
 

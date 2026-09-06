@@ -22,6 +22,8 @@ function sessionFromPayload(body: unknown): PublicSession | null {
 
 export function ConsultaApp() {
   const [session, setSession] = useState<SessionState>('loading');
+  const [sessionNotice, setSessionNotice] = useState<string | null>(null);
+  const [logoutPending, setLogoutPending] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -42,11 +44,23 @@ export function ConsultaApp() {
   }, []);
 
   async function logout() {
+    setLogoutPending(true);
+    setSessionNotice(null);
     try {
-      await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' });
-    } finally {
+      const response = await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' });
+      if (!response.ok) throw new Error('Logout failed');
       setSession(null);
+      setSessionNotice('La sesión se cerró correctamente.');
+    } catch {
+      setSessionNotice('No pudimos cerrar la sesión. Intenta nuevamente.');
+    } finally {
+      setLogoutPending(false);
     }
+  }
+
+  function expireSession() {
+    setSessionNotice('Tu sesión expiró. Inicia sesión nuevamente.');
+    setSession(null);
   }
 
   const authenticated = session !== 'loading' && session !== null;
@@ -60,7 +74,11 @@ export function ConsultaApp() {
         </Link>
         <div className="header-actions">
           {authenticated ? <span className="badge">{session.role === 'admin' ? 'Administrador' : 'Usuario'}</span> : null}
-          {authenticated ? <button type="button" onClick={() => { void logout(); }}>Cerrar sesión</button> : <span className="version">Acceso seguro</span>}
+          {authenticated ? (
+            <button type="button" disabled={logoutPending} onClick={() => { void logout(); }}>
+              {logoutPending ? 'Cerrando…' : 'Cerrar sesión'}
+            </button>
+          ) : <span className="version">Acceso seguro</span>}
         </div>
       </header>
       <main>
@@ -78,8 +96,12 @@ export function ConsultaApp() {
           </p>
         </section>
         {session === 'loading' ? <p className="intro">Comprobando sesión…</p> : null}
-        {session === null ? <LoginForm onAuthenticated={setSession} /> : null}
-        {authenticated ? <ScoreLookup session={session} onUnauthenticated={() => setSession(null)} /> : null}
+        {sessionNotice ? <p role="alert" className="alert session-alert">{sessionNotice}</p> : null}
+        {session === null ? <LoginForm onAuthenticated={(authenticatedSession) => {
+          setSessionNotice(null);
+          setSession(authenticatedSession);
+        }} /> : null}
+        {authenticated ? <ScoreLookup session={session} onUnauthenticated={expireSession} /> : null}
         <div className="status-slot">
           <ApiStatus />
         </div>

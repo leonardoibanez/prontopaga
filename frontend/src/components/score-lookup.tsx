@@ -39,7 +39,6 @@ export function ScoreLookup({ session, onUnauthenticated }: ScoreLookupProps) {
       const response = await fetch(`/api/score/${encodeURIComponent(rut)}`, { cache: 'no-store' });
       const body: unknown = await response.json();
       if (response.status === 401) {
-        setError(errorMessage('SCORE_UNAUTHENTICATED'));
         onUnauthenticated();
         return;
       }

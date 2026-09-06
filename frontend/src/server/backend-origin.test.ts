@@ -14,6 +14,7 @@ describe('getBackendOrigin', () => {
     '',
     '/api',
     'ftp://api.example.test',
+    'http://api.example.test',
     'https://user:password@api.example.test',
     'https://api.example.test?debug=true',
     'https://api.example.test#fragment',

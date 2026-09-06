@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   let appOrigin: string;
   try {
-    appOrigin = process.env.APP_ORIGIN ? getAppOrigin() : new URL(request.url).origin;
+    appOrigin = getAppOrigin();
   } catch {
     return safeError(500, 'AUTH_CONFIG_ERROR');
   }

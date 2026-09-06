@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
-import { parseAccessToken, toPublicSession } from '@/server/access-token';
+import { parseVerifiedSession, toPublicSession } from '@/server/verified-session';
 import { getAppOrigin, isHttpsOrigin } from '@/server/app-origin';
-import { jsonNoStore } from '@/server/bff';
+import { getBackendOrigin } from '@/server/backend-origin';
+import { fetchUpstreamJson, jsonNoStore, safeError } from '@/server/bff';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '@/server/session-cookie';
 
 export const runtime = 'nodejs';
@@ -14,11 +15,13 @@ function unauthenticated(secure: boolean) {
 }
 
 export async function GET(request: NextRequest) {
-  let secure = false;
+  let secure: boolean;
+  let backendOrigin: string;
   try {
-    secure = isHttpsOrigin(process.env.APP_ORIGIN ? getAppOrigin() : new URL(request.url).origin);
+    secure = isHttpsOrigin(getAppOrigin());
+    backendOrigin = getBackendOrigin();
   } catch {
-    secure = false;
+    return safeError(500, 'AUTH_CONFIG_ERROR');
   }
 
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -26,10 +29,17 @@ export async function GET(request: NextRequest) {
     return jsonNoStore({ authenticated: false });
   }
 
-  const claims = parseAccessToken(token);
-  if (claims === null) {
+  const upstream = await fetchUpstreamJson(`${backendOrigin}/me`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (upstream.kind === 'timeout') return safeError(504, 'AUTH_UPSTREAM_TIMEOUT');
+  if (upstream.kind !== 'response') return safeError(502, 'AUTH_UPSTREAM_ERROR');
+  if (upstream.status === 401) {
     return unauthenticated(secure);
   }
+  if (!upstream.ok) return safeError(502, 'AUTH_UPSTREAM_ERROR');
 
-  return jsonNoStore({ authenticated: true, ...toPublicSession(claims) });
+  const session = parseVerifiedSession(upstream.payload);
+  if (session === null) return safeError(502, 'AUTH_UPSTREAM_ERROR');
+  return jsonNoStore({ authenticated: true, ...toPublicSession(session) });
 }

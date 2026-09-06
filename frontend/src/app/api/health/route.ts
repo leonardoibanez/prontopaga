@@ -1,21 +1,14 @@
-import { NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/server/backend-origin';
+import { fetchUpstreamJson, jsonNoStore, safeError } from '@/server/bff';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-const TIMEOUT_MS = 8_000;
-const NO_STORE_HEADERS = { 'Cache-Control': 'no-store' };
 
 type HealthPayload = {
   status: 'ok';
   service: string;
   timestamp: string;
 };
-
-function safeError(status: number, code: string) {
-  return NextResponse.json({ status: 'error', code }, { status, headers: NO_STORE_HEADERS });
-}
 
 function isHealthPayload(payload: unknown): payload is HealthPayload {
   if (!payload || typeof payload !== 'object') return false;
@@ -36,26 +29,10 @@ export async function GET() {
     return safeError(500, 'HEALTH_CONFIG_ERROR');
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-  try {
-    const upstreamResponse = await fetch(`${origin}/api/health`, {
-      cache: 'no-store',
-      redirect: 'error',
-      signal: controller.signal,
-    });
-    if (!upstreamResponse.ok) return safeError(502, 'HEALTH_UPSTREAM_ERROR');
-
-    const payload: unknown = await upstreamResponse.json();
-    if (!isHealthPayload(payload)) return safeError(502, 'HEALTH_UPSTREAM_ERROR');
-
-    return NextResponse.json(payload, { headers: NO_STORE_HEADERS });
-  } catch {
-    return controller.signal.aborted
-      ? safeError(504, 'HEALTH_UPSTREAM_TIMEOUT')
-      : safeError(502, 'HEALTH_UPSTREAM_ERROR');
-  } finally {
-    clearTimeout(timeout);
-  }
+  const upstream = await fetchUpstreamJson(`${origin}/api/health`);
+  if (upstream.kind === 'timeout') return safeError(504, 'HEALTH_UPSTREAM_TIMEOUT');
+  if (upstream.kind !== 'response' || !upstream.ok) return safeError(502, 'HEALTH_UPSTREAM_ERROR');
+  if (!isHealthPayload(upstream.payload)) return safeError(502, 'HEALTH_UPSTREAM_ERROR');
+  const { status, service, timestamp } = upstream.payload;
+  return jsonNoStore({ status, service, timestamp });
 }
